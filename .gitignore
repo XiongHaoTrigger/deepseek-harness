@@ -1,6 +1,9 @@
 CLAUDE.local.md
 .env
 node_modules/
+avalonia/**/bin/
+avalonia/**/obj/
+*.DotSettings.user
 lib/
 *.tsbuildinfo
 pnpm-debug.log

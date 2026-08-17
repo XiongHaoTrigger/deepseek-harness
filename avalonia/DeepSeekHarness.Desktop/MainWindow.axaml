@@ -1,0 +1,19 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="DeepSeekHarness.Desktop.MainWindow"
+        Title="DeepSeek Harness"
+        Width="1280"
+        Height="820"
+        MinWidth="900"
+        MinHeight="600">
+  <Grid>
+    <Border Name="StartupPanel" Padding="32">
+      <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
+        <TextBlock Name="StatusText" Text="正在启动 DeepSeek Harness…" FontSize="18" />
+        <TextBlock Name="ErrorText" IsVisible="False" TextWrapping="Wrap" MaxWidth="700" />
+        <Button Name="RetryButton" IsVisible="False" HorizontalAlignment="Center">重试</Button>
+      </StackPanel>
+    </Border>
+    <ContentControl Name="WebHost" IsVisible="False" />
+  </Grid>
+</Window>
