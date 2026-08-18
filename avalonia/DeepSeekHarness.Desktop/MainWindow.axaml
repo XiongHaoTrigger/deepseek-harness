@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="DeepSeekHarness.Desktop.MainWindow"
         Title="DeepSeek Harness"
+        Icon="/icon/windows/avalonia-app-icon.ico"
         Width="1280"
         Height="820"
         MinWidth="900"

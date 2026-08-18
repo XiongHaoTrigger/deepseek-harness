@@ -6,6 +6,48 @@ namespace DeepSeekHarness.Desktop.Tests;
 public sealed class DshWebServerTests
 {
     [Fact]
+    public void AttachedRuntimeLaunchesTheBundledNodeFromTheRuntimeDirectory()
+    {
+        var applicationDirectory = Path.Combine(Path.GetTempPath(), $"dsh-desktop-{Guid.NewGuid():N}");
+        var runtimeDirectory = Path.Combine(applicationDirectory, "runtime");
+        Directory.CreateDirectory(runtimeDirectory);
+        File.WriteAllText(Path.Combine(runtimeDirectory, "node.exe"), string.Empty);
+        File.WriteAllText(Path.Combine(runtimeDirectory, "dsh-web-entry.js"), string.Empty);
+
+        try
+        {
+            var launch = DshWebLaunch.ForAttachedRuntime(applicationDirectory);
+
+            Assert.Equal(Path.Combine(runtimeDirectory, "node.exe"), launch.FileName);
+            Assert.Equal(runtimeDirectory, launch.WorkingDirectory);
+            Assert.Equal([Path.Combine(runtimeDirectory, "dsh-web-entry.js"), "web", "--port", "0"], launch.Arguments);
+            Assert.True(launch.EnvironmentVariables.ContainsKey("DSH_HOME"));
+        }
+        finally
+        {
+            Directory.Delete(applicationDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void AttachedRuntimeReportsTheMissingNodeExecutable()
+    {
+        var applicationDirectory = Path.Combine(Path.GetTempPath(), $"dsh-desktop-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(applicationDirectory);
+
+        try
+        {
+            var exception = Assert.Throws<FileNotFoundException>(() => DshWebLaunch.ForAttachedRuntime(applicationDirectory));
+
+            Assert.Contains("node.exe", exception.Message);
+        }
+        finally
+        {
+            Directory.Delete(applicationDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
     public void ParsesLoopbackWebUrlFromStandardOutput()
     {
         var parsed = WebServerStartupOutput.TryParseWebUrl("dsh web: http://127.0.0.1:49152", out var url);

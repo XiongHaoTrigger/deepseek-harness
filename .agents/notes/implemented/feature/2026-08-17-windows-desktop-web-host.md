@@ -6,25 +6,26 @@ English | [中文](2026-08-17-windows-desktop-web-host.zh.md)
 
 ## Problem
 
-Windows users need a desktop entry point for the existing Web UI without creating a second client runtime or distributing Node.js and its package tree inside an executable.
+Windows users need a desktop entry point for the existing Web UI without creating a second client runtime.
 
 ## Decision
 
-`avalonia/DeepSeekHarness.Desktop` ships a Windows x64 Avalonia application named `DeepSeekHarness.exe`. It starts `pnpm dsh web --port 0` from the repository root through hidden `cmd.exe` and `pnpm.cmd`, parses the loopback URL from stdout, and assigns it to `NativeWebView`. The WebView uses the Avalonia Windows WebView2 backend. Startup failure shows captured stderr and permits retry.
+`avalonia/DeepSeekHarness.Desktop` ships a Windows x64 Avalonia application named `DeepSeekHarness.exe`. Debug builds start `pnpm dsh web --port 0` from the repository root through hidden `cmd.exe` and `pnpm.cmd`. Release builds use the [attached dsh runtime](2026-08-18-windows-attached-dsh-runtime.md), which starts its bundled `node.exe` directly. Both launch paths parse the loopback URL from stdout and assign it to `NativeWebView`. The WebView uses the Avalonia Windows WebView2 backend. Startup failure shows captured stderr and permits retry.
 
-Avalonia design mode renders a static startup panel and does not attach `NativeWebView`, start pnpm, or create a WebView2 child window. The design host cannot reliably create a WebView2 HWND.
+Avalonia design mode renders a static startup panel and does not attach `NativeWebView`, start a Web server, or create a WebView2 child window. The design host cannot reliably create a WebView2 HWND.
 
-The launcher assigns its command process to a Windows Job Object with `KILL_ON_JOB_CLOSE`. Retrying and closing the main window dispose the Job Object and await the root process, so the pnpm, Corepack, Node, and Web server descendants stop even after a command wrapper exits early.
+The launcher assigns its root process to a Windows Job Object with `KILL_ON_JOB_CLOSE`. Retrying and closing the main window dispose the Job Object and await the root process, so the command wrapper where present, Node, and Web server descendants stop even after the root process exits early.
 
-The project targets `net10.0` and `win-x64`. Debug and design-time builds disable AOT and trimming for the Avalonia designer; Release publishing is self-contained Native AOT with trimming. Its Windows compatibility manifest enables the native child window used by `NativeWebView`. The executable continues to depend on a local repository, Node.js, pnpm, installed workspace dependencies, and the WebView2 Runtime.
+The project targets `net10.0` and `win-x64`. Debug and design-time builds disable AOT and trimming for the Avalonia designer; Release publishing is self-contained Native AOT with trimming. Its Windows compatibility manifest enables the native child window used by `NativeWebView`. The published executable requires the WebView2 Runtime but not a local repository, Node.js, pnpm, or installed workspace dependencies.
 
 ## Alternatives considered
 
 - Reimplement the React client in Avalonia — rejected; the desktop shell hosts the existing Web UI and leaves its behavior owned by the Web application.
 - Use an embedded Chromium engine — rejected; the official `NativeWebView` uses the installed WebView2 Runtime and keeps the executable smaller.
 - Rely only on `Process.Kill(entireProcessTree: true)` — rejected; pnpm's command wrappers can exit before shutdown, leaving a detached Node descendant. The Job Object owns the whole launched tree.
+- Start pnpm from the published executable — rejected; the attached runtime makes the published application independent of the development toolchain.
 - Disable AOT for WebView support — rejected; Avalonia's official WebView package supports trimming and AOT, and the Native AOT publish succeeds.
 
 ## Consequences
 
-The desktop executable is Windows x64 only and is launched from a checkout of this repository. It loads the same loopback Web UI as `pnpm dsh web`; it does not package the Web client, Node.js, pnpm, or an installer. Unit tests cover URL parsing, missing-URL failure text, and retry cleanup, while the native run verifies WebView startup and process-tree shutdown.
+The desktop executable is Windows x64 only. It loads the same loopback Web UI as `pnpm dsh web`; the Release payload includes the Web client, Node.js, and its deployed dependency closure but not pnpm or an installer. Unit tests cover URL parsing, missing-URL failure text, retry cleanup, and attached-runtime launch resolution, while native runs verify WebView startup and process-tree shutdown.

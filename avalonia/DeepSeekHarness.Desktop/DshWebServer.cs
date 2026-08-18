@@ -15,27 +15,27 @@ public interface IDshWebServer
 
 public sealed class DshWebServer : IDshWebServer
 {
-    private readonly string repositoryRoot;
+    private readonly DshWebLaunch launch;
     private Process? process;
     private WindowsProcessJob? job;
 
-    public DshWebServer(string repositoryRoot)
+    public DshWebServer(DshWebLaunch launch)
     {
-        this.repositoryRoot = repositoryRoot;
+        this.launch = launch;
     }
 
     public async Task<Uri> StartAsync(CancellationToken cancellationToken)
     {
         await StopAsync();
         var output = new WebServerStartupOutput();
-        var startedProcess = new Process { StartInfo = CreateStartInfo(repositoryRoot), EnableRaisingEvents = true };
+        var startedProcess = new Process { StartInfo = CreateStartInfo(launch), EnableRaisingEvents = true };
         var startedJob = WindowsProcessJob.Create();
 
         if (!startedProcess.Start())
         {
             startedProcess.Dispose();
             startedJob.Dispose();
-            throw new InvalidOperationException("无法启动 pnpm.cmd。");
+            throw new InvalidOperationException("无法启动 DeepSeek Harness Web 服务。");
         }
 
         try
@@ -100,22 +100,28 @@ public sealed class DshWebServer : IDshWebServer
         }
     }
 
-    private static ProcessStartInfo CreateStartInfo(string workingDirectory)
+    private static ProcessStartInfo CreateStartInfo(DshWebLaunch launch)
     {
         var info = new ProcessStartInfo
         {
-            FileName = "cmd.exe",
-            WorkingDirectory = workingDirectory,
+            FileName = launch.FileName,
+            WorkingDirectory = launch.WorkingDirectory,
             UseShellExecute = false,
             CreateNoWindow = true,
             WindowStyle = ProcessWindowStyle.Hidden,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
         };
-        info.ArgumentList.Add("/d");
-        info.ArgumentList.Add("/s");
-        info.ArgumentList.Add("/c");
-        info.ArgumentList.Add("pnpm.cmd dsh web --port 0");
+        foreach (var argument in launch.Arguments)
+        {
+            info.ArgumentList.Add(argument);
+        }
+
+        foreach (var environmentVariable in launch.EnvironmentVariables)
+        {
+            info.Environment[environmentVariable.Key] = environmentVariable.Value;
+        }
+
         return info;
     }
 
@@ -166,7 +172,7 @@ internal sealed class WindowsProcessJob : IDisposable
     {
         if (!AssignProcessToJobObject(handle, process.Handle))
         {
-            throw new Win32Exception(Marshal.GetLastWin32Error(), "无法将 pnpm.cmd 加入 Windows Job Object。");
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "无法将 DeepSeek Harness Web 服务加入 Windows Job Object。");
         }
     }
 

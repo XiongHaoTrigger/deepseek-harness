@@ -10,6 +10,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>icon\windows\avalonia-app-icon.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <PublishAot>false</PublishAot>
@@ -27,9 +28,24 @@
     <SelfContained>false</SelfContained>
   </PropertyGroup>
   <ItemGroup>
+    <AvaloniaResource Include="icon\windows\avalonia-app-icon.ico" />
     <PackageReference Include="Avalonia" Version="12.0.1" />
     <PackageReference Include="Avalonia.Desktop" Version="12.0.1" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.1" />
     <PackageReference Include="Avalonia.Controls.WebView" Version="12.0.1" />
   </ItemGroup>
+  <Target Name="ValidateAttachedDshRuntime" BeforeTargets="Publish" Condition="'$(Configuration)' == 'Release' and '$(RuntimeIdentifier)' == 'win-x64'">
+    <PropertyGroup>
+      <AttachedRuntimeDirectory>$(MSBuildProjectDirectory)\..\runtime-packaging\dist\runtime</AttachedRuntimeDirectory>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(AttachedRuntimeDirectory)\node.exe')" Text="附属 dsh 运行时缺失。请先运行 avalonia/runtime-packaging/build-runtime.ps1。" />
+    <Error Condition="!Exists('$(AttachedRuntimeDirectory)\dsh-web-entry.js')" Text="附属 dsh 运行时入口缺失。请重新运行 avalonia/runtime-packaging/build-runtime.ps1。" />
+  </Target>
+  <Target Name="CopyAttachedDshRuntime" AfterTargets="Publish" Condition="'$(Configuration)' == 'Release' and '$(RuntimeIdentifier)' == 'win-x64'">
+    <ItemGroup>
+      <AttachedRuntimeFiles Include="$(MSBuildProjectDirectory)\..\runtime-packaging\dist\runtime\**\*" />
+    </ItemGroup>
+    <RemoveDir Directories="$(PublishDir)runtime" />
+    <Copy SourceFiles="@(AttachedRuntimeFiles)" DestinationFiles="@(AttachedRuntimeFiles->'$(PublishDir)runtime\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
 </Project>

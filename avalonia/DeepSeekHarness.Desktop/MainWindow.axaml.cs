@@ -6,7 +6,7 @@ namespace DeepSeekHarness.Desktop;
 
 public sealed partial class MainWindow : Window
 {
-    private readonly DesktopWebHost webHost = new(() => new DshWebServer(RepositoryRoot.Find()));
+    private readonly DesktopWebHost webHost = new(() => new DshWebServer(DshWebLaunchResolver.Resolve()));
     private bool closing;
 
     public MainWindow()
@@ -15,7 +15,7 @@ public sealed partial class MainWindow : Window
 
         if (Design.IsDesignMode)
         {
-            StatusText.Text = "Lunching DeepSeek Harness…";
+            StatusText.Text = "正在启动 DeepSeek Harness…";
             return;
         }
 
@@ -32,7 +32,7 @@ public sealed partial class MainWindow : Window
     {
         StartupPanel.IsVisible = true;
         WebHost.IsVisible = false;
-        StatusText.Text = "Lunching DeepSeek Harness…";
+        StatusText.Text = "正在启动 DeepSeek Harness…";
         ErrorText.IsVisible = false;
         RetryButton.IsVisible = false;
 

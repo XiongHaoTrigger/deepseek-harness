@@ -1,6 +1,6 @@
 # Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
-#   pnpm run verify-translation-pairing --write avalonia/DeepSeekHarness.Desktop/README.md
-README.md: e1a78b520ac146d24142a58da19f54dabba79e6e
-README.zh.md: bb72c39ccb3be7a590c12efb2db8f0fea71f6492
+#   pnpm run verify-translation-pairing --write avalonia/runtime-packaging/README.md
+README.md: 8ebc42e8926b9a97b9b534d869c1980608ae701c
+README.zh.md: d27c64fc57ced8b134b3f62805f32f390a247cc8
